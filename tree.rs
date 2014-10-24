@@ -24,14 +24,14 @@ fn make_tree() -> Node {
 fn walk(node: &Node, depth: uint) {
     println!("{}{}", String::from_char(depth * 4u, ' '), node.value);
     //                                       ^^^^ While this must be uint,
-    match node.left {
+    match node.left { //                      vvv this can be int.
         Some(ref node) => walk(&**node, depth + 1),
-        //                                    ^^^ this can be int.
+        //                     ^^^ Tedious?
         None => (),
     }
     match node.right {
-        Some(ref node) => walk(&**node, depth + 1),
-        //                     ^^^ Tedious...
+        Some(box ref node) => walk(node, depth + 1),
+        //   ^^^ Then add `box` here to kick sigils off.
         None => (),
     }
 }
