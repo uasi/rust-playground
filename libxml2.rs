@@ -1,9 +1,12 @@
+#![feature(unsafe_destructor)]
+
 extern crate core;
 extern crate libc;
 
 use core::raw::Slice;
 use libc::{c_char, c_uchar, c_ushort, c_int, c_void};
 use std::mem;
+use std::kinds::marker::{ContravariantLifetime};
 use std::ptr;
 
 static HTML_PARSE_NOERROR: c_int = 32;
@@ -102,20 +105,23 @@ impl XmlDoc {
         }
     }
 
-    // Dangerous!
-    // If the returned node outlives the doc, the node's ptr will be freed!
-    fn root_element(&self) -> XmlNode {
+    fn root_element<'a>(&'a self) -> XmlNode {
         unsafe {
-            XmlNode { ptr: xmlDocGetRootElement(mem::transmute(self.ptr)) }
+            XmlNode {
+                ptr: xmlDocGetRootElement(mem::transmute(self.ptr)),
+                lt: ContravariantLifetime::<'a>
+            }
         }
     }
 }
 
-struct XmlNode {
-    ptr: *mut xmlNode
+struct XmlNode<'a> {
+    ptr: *mut xmlNode,
+    lt: ContravariantLifetime<'a>
 }
 
-impl Drop for XmlNode {
+#[unsafe_destructor]
+impl<'a> Drop for XmlNode<'a> {
     fn drop(&mut self) {
         unsafe {
             if (*self.ptr).parent.is_null() {
@@ -125,14 +131,14 @@ impl Drop for XmlNode {
     }
 }
 
-impl XmlNode {
+impl<'a> XmlNode<'a> {
     fn name(&self) -> &str {
         unsafe { xml_str_to_slice((*self.ptr).name) }
     }
 }
-
 fn main() {
-    let doc = XmlDoc::from_html_str("<html><body>BODY</body></html>");
-    assert!(doc.is_some());
-    println!("root element name: {}", doc.unwrap().root_element().name());
+    let root: XmlNode;
+    let doc = XmlDoc::from_html_str("<html><body>BODY</body></html>").expect("must be parsable");
+    root = doc.root_element();
+    println!("root element name: {}", root.name());
 }
