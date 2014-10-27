@@ -135,10 +135,23 @@ impl<'a> XmlNode<'a> {
     fn name(&self) -> &str {
         unsafe { xml_str_to_slice((*self.ptr).name) }
     }
+
+    fn content(&self) -> Option<String> {
+        unsafe {
+            let content = (*self.ptr).content;
+            if content.is_null() {
+                None
+            } else {
+                Some(xml_str_to_slice(mem::transmute(content) /* *mut u8 => *const u8 */).to_string())
+            }
+        }
+    }
 }
+
 fn main() {
     let root: XmlNode;
     let doc = XmlDoc::from_html_str("<html><body>BODY</body></html>").expect("must be parsable");
     root = doc.root_element();
     println!("root element name: {}", root.name());
+    println!("root element content: {}", root.content());
 }
