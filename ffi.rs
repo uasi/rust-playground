@@ -24,6 +24,6 @@ fn adler32(adler: u64, buf: &[u8]) -> u64 {
 fn main() {
     let adler = adler32(0, &[]);
     println!("initial value: {}", adler);
-    let adler = adler32(0, &[1u8, 2u8, 3u8]);
+    let adler = adler32(adler, &[1u8, 2u8, 3u8]);
     println!("put [1, 2, 3]: {}", adler);
 }
