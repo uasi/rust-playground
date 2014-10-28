@@ -136,6 +136,7 @@ impl<'a> XmlNode<'a> {
         unsafe { xml_str_to_slice((*self.ptr).name) }
     }
 
+    // FIXME: always returns None
     fn content(&self) -> Option<String> {
         unsafe {
             let content = (*self.ptr).content;
@@ -146,6 +147,37 @@ impl<'a> XmlNode<'a> {
             }
         }
     }
+
+    fn children<'a>(&'a self) -> XmlNodeIterator {
+        XmlNodeIterator {
+            ptr: unsafe { (*self.ptr).children },
+            lt: ContravariantLifetime::<'a>
+        }
+    }
+}
+
+struct XmlNodeIterator<'a> {
+    ptr: *mut xmlNode,
+    lt: ContravariantLifetime<'a>
+}
+
+impl<'a> Iterator<XmlNode<'a>> for XmlNodeIterator<'a> {
+    fn next<'a>(&mut self) -> Option<XmlNode<'a>> {
+        //  ^^  ^^^^ -- Not `&'a mut`. Why? (This might help: http://stackoverflow.com/a/24848424 )
+        //   `---- This 'a is NOT the same 'a in `impl<'a>` because this 'a shadows that 'a.
+        //         You'd better use 'b or some other name in practice.
+        unsafe {
+            if self.ptr.is_null() {
+                return None
+            }
+            let node = self.ptr;
+            self.ptr = self.ptr.offset(1);
+            Some(XmlNode {
+                ptr: node,
+                lt: ContravariantLifetime::<'a>
+            })
+        }
+    }
 }
 
 fn main() {
@@ -154,4 +186,8 @@ fn main() {
     root = doc.root_element();
     println!("root element name: {}", root.name());
     println!("root element content: {}", root.content());
+    for node in root.children() {
+        println!("child element name: {}", node.name());
+        println!("child element content: {}", node.content());
+    }
 }
