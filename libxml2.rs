@@ -72,9 +72,15 @@ struct xmlNode {
 extern {
     fn htmlReadMemory(buffer: *const c_char, size: c_int, url: *const c_char, encoding: *const c_char, options: c_int) -> *mut xmlDoc;
     fn xmlDocGetRootElement(doc: *const xmlDoc) -> *mut xmlNode;
+    fn xmlNodeGetContent(cur: *const xmlNode) -> *mut xmlChar;
     fn xmlFreeDoc(cur: *mut xmlDoc);
     fn xmlFreeNode(cur: *mut xmlNode);
     fn xmlStrlen(str: *const xmlChar) -> c_int;
+}
+
+#[allow(non_snake_case)]
+unsafe fn xmlFree(ptr: *mut c_void) {
+    libc::free(ptr);
 }
 
 unsafe fn xml_str_to_slice<'a>(xml_str: *const xmlChar) -> &'a str {
@@ -136,14 +142,15 @@ impl<'a> XmlNode<'a> {
         unsafe { xml_str_to_slice((*self.ptr).name) }
     }
 
-    // FIXME: always returns None
     fn content(&self) -> Option<String> {
         unsafe {
-            let content = (*self.ptr).content;
+            let content = xmlNodeGetContent(self.ptr as *const xmlNode);
             if content.is_null() {
                 None
             } else {
-                Some(xml_str_to_slice(mem::transmute(content) /* *mut u8 => *const u8 */).to_string())
+                let content_string = xml_str_to_slice(content as *const xmlChar).to_string();
+                xmlFree(content as *mut c_void);
+                Some(content_string)
             }
         }
     }
