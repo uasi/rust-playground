@@ -2,42 +2,36 @@
 // to grab the gist of making a static library written in Rust.
 
 #![no_std]
-#![feature(macro_rules, phase, globs)]
+#![feature(plugin)]
 
-// For Box.
+// For `Box`.
 extern crate alloc;
 
-#[phase(plugin, link)]
+#[plugin]
 extern crate core;
 
 // For making fake `std`.
-#[phase(plugin, link)]
+#[plugin]
+#[macro_use(vec)]
 extern crate collections;
 
 // Without this it doesn't compile.
-#[phase(plugin, link)]
+#[plugin]
 extern crate log;
 
 // For `puts`.
-#[phase(plugin, link)]
+#[plugin]
 extern crate libc;
-
-// For ToCStr trait and its `with_c_str`.
-#[phase(plugin, link)]
-extern crate rustrt;
 
 #[allow(unused_imports)]
 use core::prelude::*;
 
-use rustrt::c_str::*;
-
 use alloc::boxed::Box;
 
-/// A fake `std` module so that `deriving` and other macros will work.
+/// A fake `std` module so that `derive` and other macros will work.
 /// See rust-lang/rust#16803.
 mod std {
     pub use core::{clone, cmp, default, fmt, option, str};
-    pub use collections::hash;
 }
 
 struct Container {
@@ -46,9 +40,8 @@ struct Container {
 
 impl Drop for Container {
     fn drop(&mut self) {
-        "dropping".with_c_str(|c_str| unsafe {
-            libc::puts(c_str);
-        });
+        let hello = vec![0x68i8, 0x65, 0x6c, 0x6c, 0x6f, 0x00];
+        unsafe { libc::puts(core::mem::transmute(hello.as_ptr())); }
     }
 }
 
@@ -57,7 +50,7 @@ pub type ContainerPtr = *const ();
 #[no_mangle]
 pub unsafe extern "C"
 fn new_boxed_container() -> ContainerPtr {
-    core::mem::transmute(box Container { value: 42 })
+    core::mem::transmute(Box::new(Container { value: 42 }))
 }
 
 #[no_mangle]

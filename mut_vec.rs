@@ -1,19 +1,19 @@
-#[deriving(Show)]
+#[derive(Show)]
 struct Item {
-    value: int
+    value: i32
 }
 
 impl Item {
-    fn new(value: int) -> Item {
+    fn new(value: i32) -> Item {
         Item { value: value }
     }
 }
 
 fn make_vec() -> Vec<Vec<Item>> {
     let mut v = Vec::new();
-    for i in range(0i, 5) {
+    for i in 0..5 {
         let mut w = Vec::new();
-        for j in range(0i, 5) {
+        for j in 0..5 {
             w.push(Item::new(i * 10 + j));
         }
         v.push(w);
@@ -39,5 +39,5 @@ fn main() {
     let mut v = make_vec();
     reject_odd_items(&mut v);
     double_item_value(&mut v);
-    println!("{}", v);
+    println!("{:?}", v);
 }

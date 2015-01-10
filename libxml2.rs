@@ -5,8 +5,9 @@ extern crate libc;
 
 use core::raw::Slice;
 use libc::{c_char, c_uchar, c_ushort, c_int, c_void};
+use std::ffi::CString;
 use std::mem;
-use std::kinds::marker::{ContravariantLifetime};
+use std::marker::ContravariantLifetime;
 use std::ptr;
 
 static HTML_PARSE_NOERROR: c_int = 32;
@@ -84,7 +85,7 @@ unsafe fn xmlFree(ptr: *mut c_void) {
 }
 
 unsafe fn xml_str_to_slice<'a>(xml_str: *const xmlChar) -> &'a str {
-    mem::transmute(Slice { data: xml_str, len: xmlStrlen(xml_str) as uint })
+    mem::transmute(Slice { data: xml_str, len: xmlStrlen(xml_str) as usize })
 }
 
 struct XmlDoc {
@@ -100,9 +101,9 @@ impl Drop for XmlDoc {
 impl XmlDoc {
     fn from_html_str(html: &str) -> Option<XmlDoc> {
         unsafe {
-            let c_html = html.to_c_str();
-            let c_enc = "".to_c_str();
-            let doc_ptr = htmlReadMemory(c_html.as_ptr() as *const c_char, html.len() as c_int, c_enc.as_ptr(), ptr::null(), HTML_PARSE_NOWARNING | HTML_PARSE_NOERROR);
+            let c_html = CString::from_slice(html.as_bytes());
+            let c_enc = CString::from_slice("".as_bytes());
+            let doc_ptr = htmlReadMemory(c_html.as_ptr(), html.len() as c_int, c_enc.as_ptr(), ptr::null(), HTML_PARSE_NOWARNING | HTML_PARSE_NOERROR);
             if doc_ptr.is_null() {
                 None
             } else {
@@ -155,10 +156,10 @@ impl<'a> XmlNode<'a> {
         }
     }
 
-    fn children<'a>(&'a self) -> XmlNodeIterator {
+    fn children<'b>(&'b self) -> XmlNodeIterator {
         XmlNodeIterator {
             ptr: unsafe { (*self.ptr).children },
-            lt: ContravariantLifetime::<'a>
+            lt: ContravariantLifetime::<'b>
         }
     }
 }
@@ -168,11 +169,11 @@ struct XmlNodeIterator<'a> {
     lt: ContravariantLifetime<'a>
 }
 
-impl<'a> Iterator<XmlNode<'a>> for XmlNodeIterator<'a> {
-    fn next<'a>(&mut self) -> Option<XmlNode<'a>> {
+impl<'a> Iterator for XmlNodeIterator<'a> {
+    type Item = XmlNode<'a>;
+
+    fn next<'b>(&mut self) -> Option<XmlNode<'b>> {
         //  ^^  ^^^^ -- Not `&'a mut`. Why? (This might help: http://stackoverflow.com/a/24848424 )
-        //   `---- This 'a is NOT the same 'a in `impl<'a>` because this 'a shadows that 'a.
-        //         You'd better use 'b or some other name in practice.
         unsafe {
             if self.ptr.is_null() {
                 return None
@@ -181,7 +182,7 @@ impl<'a> Iterator<XmlNode<'a>> for XmlNodeIterator<'a> {
             self.ptr = self.ptr.offset(1);
             Some(XmlNode {
                 ptr: node,
-                lt: ContravariantLifetime::<'a>
+                lt: ContravariantLifetime::<'b>
             })
         }
     }
@@ -192,9 +193,9 @@ fn main() {
     let doc = XmlDoc::from_html_str("<html><body>BODY</body></html>").expect("must be parsable");
     root = doc.root_element();
     println!("root element name: {}", root.name());
-    println!("root element content: {}", root.content());
+    println!("root element content: {:?}", root.content());
     for node in root.children() {
         println!("child element name: {}", node.name());
-        println!("child element content: {}", node.content());
+        println!("child element content: {:?}", node.content());
     }
 }
