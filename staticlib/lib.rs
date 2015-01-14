@@ -13,7 +13,7 @@ impl Drop for Container {
     }
 }
 
-pub type ContainerPtr = *const ();
+pub type ContainerPtr = *const Container;
 
 #[no_mangle]
 pub unsafe extern "C"
