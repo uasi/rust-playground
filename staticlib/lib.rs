@@ -18,6 +18,9 @@ pub type ContainerPtr = *const Container;
 #[no_mangle]
 pub unsafe extern "C"
 fn new_boxed_container() -> ContainerPtr {
+                         // ^^^^^^^^^^^^
+                         // You cannot use `*const Container` here
+                         // unless you make Container public.
     mem::transmute(Box::new(Container { value: 42 }))
 }
 
