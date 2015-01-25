@@ -1,0 +1,8 @@
+[package]
+
+name = "curses_multi_window"
+version = "0.0.1"
+authors = ["nobody"]
+
+[dependencies.ncurses]
+git = "https://github.com/jeaye/ncurses-rs"
