@@ -8,6 +8,9 @@ use ncurses as nc;
 // Utilities
 // ---------------------------------------------------------------------------
 
+const CTRL_G: char = '\x07';
+const ESC: char    = '\x1B';
+
 fn getchar() -> char {
     char::from_u32(nc::getch() as u32).unwrap_or('\0')
 }
@@ -156,8 +159,9 @@ impl Screen {
             nc::doupdate();
 
             match getchar() {
-                'q' => { break }
-                ch  => {
+                CTRL_G => { break; }
+                ESC    => { break; }
+                ch     => {
                     self.ctx.input.push(ch);
                 }
             }
