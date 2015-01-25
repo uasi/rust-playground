@@ -8,22 +8,32 @@ use ncurses as nc;
 // Utilities
 // ---------------------------------------------------------------------------
 
+const CTRL_A: char = '\x01';
+const CTRL_B: char = '\x02';
+const CTRL_D: char = '\x04';
+const CTRL_E: char = '\x05';
+const CTRL_F: char = '\x06';
 const CTRL_G: char = '\x07';
+const CTRL_H: char = '\x08';
+const CTRL_K: char = '\x0B';
+const CTRL_W: char = '\x17';
 const ESC: char    = '\x1B';
+const DEL: char    = '\x7F';
 
 fn getchar() -> char {
     char::from_u32(nc::getch() as u32).unwrap_or('\0')
 }
 
-fn adjust_screen_cursor_pos(win: &Window) {
+fn adjust_screen_cursor_pos(win: &Window, ctx: &Context) {
     let mut beg_y = 0i32;
     let mut beg_x = 0i32;
     nc::getbegyx(win.win, &mut beg_y, &mut beg_x);
     let mut cur_y = 0i32;
     let mut cur_x = 0i32;
     nc::getyx(win.win, &mut cur_y, &mut cur_x);
+    let x_offset = cur_x - (ctx.input.len() as i32);
     let mut scr_cur_y = beg_y + cur_y;
-    let mut scr_cur_x = beg_x + cur_x;
+    let mut scr_cur_x = beg_x + x_offset + (ctx.cursor as i32);
     nc::setsyx(&mut scr_cur_y, &mut scr_cur_x);
 }
 
@@ -32,7 +42,8 @@ fn adjust_screen_cursor_pos(win: &Window) {
 // ---------------------------------------------------------------------------
 
 struct Context {
-    input: String
+    input: String,
+    cursor: usize
 }
 
 // ---------------------------------------------------------------------------
@@ -129,7 +140,7 @@ impl Screen {
         let right_pane = Window::new(RightPaneImpl, max_y - mini_buf_height, max_x - (max_x / 2), mini_buf_height, max_x / 2);
 
         Screen {
-            ctx: Box::new(Context { input: "".to_string() }),
+            ctx: Box::new(Context { input: "".to_string(), cursor: 0 }),
             max_y: max_y,
             max_x: max_x,
             mini_buf: mini_buf,
@@ -155,14 +166,65 @@ impl Screen {
                 win.draw(&*self.ctx);
                 win.noutrefresh();
             }
-            adjust_screen_cursor_pos(&self.mini_buf);
+            adjust_screen_cursor_pos(&self.mini_buf, &*self.ctx);
             nc::doupdate();
 
             match getchar() {
-                CTRL_G => { break; }
-                ESC    => { break; }
-                ch     => {
-                    self.ctx.input.push(ch);
+                CTRL_A => {
+                    self.ctx.cursor = 0;
+                }
+                CTRL_B => {
+                    if self.ctx.cursor > 0 {
+                        self.ctx.cursor -= 1;
+                    }
+                }
+                CTRL_D => {
+                    if self.ctx.cursor < self.ctx.input.len() {
+                        let cursor = self.ctx.cursor;
+                        self.ctx.input.remove(cursor);
+                    }
+                }
+                CTRL_E => {
+                    self.ctx.cursor = self.ctx.input.len();
+                }
+                CTRL_F => {
+                    if self.ctx.cursor < self.ctx.input.len() {
+                        self.ctx.cursor += 1;
+                    }
+                }
+                CTRL_G => {
+                    break;
+                }
+                CTRL_H | DEL => {
+                    if self.ctx.cursor > 0 {
+                        let cursor = self.ctx.cursor;
+                        self.ctx.input.remove(cursor - 1);
+                        self.ctx.cursor -= 1;
+                    }
+                }
+                CTRL_K => {
+                    let cursor = self.ctx.cursor;
+                    self.ctx.input.truncate(cursor);
+                }
+                CTRL_W => {
+                    let cursor = self.ctx.cursor;
+                    let mut wordbreak_pos = {
+                        let s = self.ctx.input.slice_chars(0, cursor);
+                        s.rfind(' ').unwrap_or(0)
+                    };
+                    while wordbreak_pos > 0 && self.ctx.input.char_at(wordbreak_pos - 1) == ' ' {
+                        wordbreak_pos -= 1;
+                    }
+                    self.ctx.input.truncate(wordbreak_pos);
+                    self.ctx.cursor = wordbreak_pos;
+                }
+                ESC => {
+                    break;
+                }
+                ch => {
+                    let cursor = self.ctx.cursor;
+                    self.ctx.input.insert(cursor, ch);
+                    self.ctx.cursor += 1;
                 }
             }
         }
