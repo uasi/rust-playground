@@ -1,9 +1,8 @@
 #![feature(plugin)]
+#![plugin(docopt_macros)] // Import `docopt!()`
 
 extern crate docopt;
-extern crate "rustc-serialize" as rustc_serialize; // Necessary for docopt_macros.
-
-#[plugin] #[no_link] extern crate docopt_macros; // Import `docopt!`
+extern crate "rustc-serialize" as rustc_serialize; // Necessary for `docopt!()`
 
 use docopt::Docopt;
 
