@@ -189,9 +189,8 @@ impl<'a> Iterator for XmlNodeIterator<'a> {
 }
 
 fn main() {
-    let root: XmlNode;
     let doc = XmlDoc::from_html_str("<html><body>BODY</body></html>").expect("must be parsable");
-    root = doc.root_element();
+    let root = doc.root_element();
     println!("root element name: {}", root.name());
     println!("root element content: {:?}", root.content());
     for node in root.children() {
