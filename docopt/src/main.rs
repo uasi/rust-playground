@@ -8,7 +8,7 @@ extern crate "rustc-serialize" as rustc_serialize; // Necessary for docopt_macro
 use docopt::Docopt;
 
 docopt!(
-Args derive Clone Show, // The Args struct will be generated.
+Args derive Clone Debug, // The Args struct will be generated.
 "
 Usage:
     docopt [options] <arg1> <arg2> <argint>

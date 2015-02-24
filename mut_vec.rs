@@ -1,4 +1,4 @@
-#[derive(Show)]
+#[derive(Debug)]
 struct Item {
     value: i32
 }

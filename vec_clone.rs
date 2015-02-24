@@ -1,7 +1,7 @@
-#[derive(Show)]
+#[derive(Debug)]
 struct Noncloneable;
 
-#[derive(Show, Clone)]
+#[derive(Clone, Debug)]
 struct Cloneable;
 
 fn main() {

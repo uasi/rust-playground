@@ -35,7 +35,7 @@ impl<T, F> Drop for Guard<T, F> where F: FnMut(&mut T) {
     }
 }
 
-#[derive(Show)]
+#[derive(Debug)]
 struct Guarded {
     void: ()
 }
