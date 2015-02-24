@@ -92,7 +92,7 @@ struct MiniBufImpl;
 impl WindowImpl for MiniBufImpl {
     fn draw(&self, win: nc::WINDOW, ctx: &Context) {
         nc::mvwaddstr(win, 0, 0, "input> ");
-        nc::waddstr(win, ctx.input.as_slice());
+        nc::waddstr(win, &ctx.input);
     }
 }
 
@@ -101,7 +101,7 @@ struct LeftPaneImpl;
 impl WindowImpl for LeftPaneImpl {
     fn draw(&self, win: nc::WINDOW, ctx: &Context) {
         nc::mvwaddstr(win, 0, 0, "lower> ");
-        nc::waddstr(win, ctx.input.as_slice().to_ascii_lowercase().as_slice());
+        nc::waddstr(win, &ctx.input.to_ascii_lowercase());
     }
 }
 
@@ -110,7 +110,7 @@ struct RightPaneImpl;
 impl WindowImpl for RightPaneImpl {
     fn draw(&self, win: nc::WINDOW, ctx: &Context) {
         nc::mvwaddstr(win, 0, 0, "upper> ");
-        nc::waddstr(win, ctx.input.as_slice().to_ascii_uppercase().as_slice());
+        nc::waddstr(win, &ctx.input.to_ascii_uppercase());
     }
 }
 
