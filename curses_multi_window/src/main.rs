@@ -57,7 +57,7 @@ struct Window {
 
 impl Window {
     fn new<WI>(win_impl: WI, lines: i32, cols: i32, y: i32, x: i32) -> Window
-    where WI: WindowImpl + Send {
+    where WI: WindowImpl + Send + 'static {
         let win = nc::newwin(lines, cols, y, x);
         nc::leaveok(win, true);
         Window {
