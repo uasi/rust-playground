@@ -1,9 +1,8 @@
 #![feature(unboxed_closures)]
-#![feature(unsafe_destructor)]
 
 use std::ops::{Deref, DerefMut};
 
-struct Guard<T, F> {
+struct Guard<T, F> where F: FnMut(&mut T) {
     object: T,
     finally: F,
 }
@@ -27,7 +26,6 @@ impl<T, F> DerefMut for Guard<T, F> where F: FnMut(&mut T) {
     }
 }
 
-#[unsafe_destructor]
 impl<T, F> Drop for Guard<T, F> where F: FnMut(&mut T) {
     fn drop(&mut self) {
         #![allow(unstable)]
