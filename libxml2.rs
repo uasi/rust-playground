@@ -3,15 +3,20 @@
 extern crate core;
 extern crate libc;
 
-use core::raw::Slice;
 use libc::{c_char, c_uchar, c_ushort, c_int, c_void};
 use std::ffi::CString;
 use std::mem;
-use std::marker::ContravariantLifetime;
+use std::marker::PhantomData;
 use std::ptr;
 
 static HTML_PARSE_NOERROR: c_int = 32;
 static HTML_PARSE_NOWARNING: c_int = 64;
+
+/// Adapted from core::raw::Slice, which is unstable as of 1.0.0.
+pub struct Slice<T> {
+    pub data: *const T,
+    pub len: usize,
+}
 
 #[allow(non_camel_case_types)]
 type xmlChar = c_uchar;
@@ -101,8 +106,8 @@ impl Drop for XmlDoc {
 impl XmlDoc {
     fn from_html_str(html: &str) -> Option<XmlDoc> {
         unsafe {
-            let c_html = CString::from_slice(html.as_bytes());
-            let c_enc = CString::from_slice("".as_bytes());
+            let c_html = CString::new(html).unwrap();
+            let c_enc = CString::new("").unwrap();
             let doc_ptr = htmlReadMemory(c_html.as_ptr(), html.len() as c_int, c_enc.as_ptr(), ptr::null(), HTML_PARSE_NOWARNING | HTML_PARSE_NOERROR);
             if doc_ptr.is_null() {
                 None
@@ -116,7 +121,7 @@ impl XmlDoc {
         unsafe {
             XmlNode {
                 ptr: xmlDocGetRootElement(mem::transmute(self.ptr)),
-                lt: ContravariantLifetime::<'a>
+                phantom: PhantomData
             }
         }
     }
@@ -124,7 +129,7 @@ impl XmlDoc {
 
 struct XmlNode<'a> {
     ptr: *mut xmlNode,
-    lt: ContravariantLifetime<'a>
+    phantom: PhantomData<&'a ()>
 }
 
 #[unsafe_destructor]
@@ -159,14 +164,14 @@ impl<'a> XmlNode<'a> {
     fn children<'b>(&'b self) -> XmlNodeIterator {
         XmlNodeIterator {
             ptr: unsafe { (*self.ptr).children },
-            lt: ContravariantLifetime::<'b>
+            phantom: PhantomData //'b
         }
     }
 }
 
 struct XmlNodeIterator<'a> {
     ptr: *mut xmlNode,
-    lt: ContravariantLifetime<'a>
+    phantom: PhantomData<&'a ()>
 }
 
 impl<'a> Iterator for XmlNodeIterator<'a> {
@@ -182,7 +187,7 @@ impl<'a> Iterator for XmlNodeIterator<'a> {
             self.ptr = self.ptr.offset(1);
             Some(XmlNode {
                 ptr: node,
-                lt: ContravariantLifetime::<'b>
+                phantom: PhantomData
             })
         }
     }
