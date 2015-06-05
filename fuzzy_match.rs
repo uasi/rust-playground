@@ -12,30 +12,30 @@ fn fuzzy_match(needle: &str, haystack: &str) -> bool {
 #[derive(Debug)]
 struct FuzzyMatch<'a> {
     target: &'a str,
-    submatches: Vec<(usize, usize)>,
+    submatches: Vec<std::ops::Range<usize>>,
 }
 
 fn fuzzy_match_anchored<'n, 'h>(needle: &'n str, haystack: &'h str) -> Option<FuzzyMatch<'h>> {
-    let mut haystack_ichars = haystack.char_indices();
     let mut submatches = Vec::new();
-    let mut submatch_begin = None;
+    let mut submatch_start = None;
+    let mut haystack_ichars = haystack.char_indices();
     'N: for needle_ch in needle.chars() {
         while let Some((haystack_i, haystack_ch)) = haystack_ichars.next() {
             if needle_ch == haystack_ch {
-                if submatch_begin == None {
-                    submatch_begin = Some(haystack_i);
+                if submatch_start == None {
+                    submatch_start = Some(haystack_i);
                 }
                 continue 'N;
             }
-            if let Some(begin) = submatch_begin {
-                submatches.push((begin, haystack_i));
-                submatch_begin = None;
+            if let Some(start) = submatch_start {
+                submatches.push(start .. haystack_i);
+                submatch_start = None;
             }
         }
         return None;
     }
-    if let Some(begin) = submatch_begin {
-        submatches.push((begin, haystack.len()));
+    if let Some(start) = submatch_start {
+        submatches.push(start .. haystack.len());
     }
     Some(FuzzyMatch { target: haystack, submatches: submatches })
 }
