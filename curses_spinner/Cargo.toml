@@ -1,0 +1,12 @@
+[package]
+
+name = "curses"
+version = "0.0.1"
+authors = ["nobody"]
+
+[dependencies]
+libc = "0.1.8"
+
+[dependencies.ncurses]
+version = "5.73.0"
+default-features = false
