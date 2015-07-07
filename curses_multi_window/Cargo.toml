@@ -6,3 +6,4 @@ authors = ["nobody"]
 
 [dependencies.ncurses]
 git = "https://github.com/jeaye/ncurses-rs"
+default-feature = false

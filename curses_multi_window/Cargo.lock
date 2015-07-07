@@ -2,11 +2,19 @@
 name = "curses_multi_window"
 version = "0.0.1"
 dependencies = [
- "ncurses 5.71.1 (git+https://github.com/jeaye/ncurses-rs)",
+ "ncurses 5.73.0 (git+https://github.com/jeaye/ncurses-rs)",
 ]
 
 [[package]]
+name = "libc"
+version = "0.1.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "ncurses"
-version = "5.71.1"
-source = "git+https://github.com/jeaye/ncurses-rs#bf830ecffa676fb273ecc67cbbfa8706df0b7155"
+version = "5.73.0"
+source = "git+https://github.com/jeaye/ncurses-rs#cd3db63b2c2edb09e44b5a4fcb0f4d687d814ac5"
+dependencies = [
+ "libc 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
